@@ -105,10 +105,10 @@ def fastdata(shuffles=(rand, riffle, overhand), measures=(RSS, guessing), decks=
         ydata = [[[xdata.count(data) for data in iteration] for iteration in mesr] for mesr in currentx]
 
         for c, mesr in enumerate(measures):
-            with open('_'.join([shuff.__name__, mesr.__name__, str(decks), str(iters), str(accuracy), 'x.txt']), 'w') as outfile:
+            with open('output/' + '_'.join([shuff.__name__, mesr.__name__, str(decks), str(iters), str(accuracy), 'x.txt']), 'w') as outfile:
                 json.dump(xdata[c], outfile)
 
-            with open('_'.join([shuff.__name__, mesr.__name__, str(decks), str(iters), str(accuracy), 'y.txt']), 'w') as outfile:
+            with open('output/' + '_'.join([shuff.__name__, mesr.__name__, str(decks), str(iters), str(accuracy), 'y.txt']), 'w') as outfile:
                 json.dump(ydata[c], outfile)
 
 
