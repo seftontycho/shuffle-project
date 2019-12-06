@@ -43,13 +43,19 @@ def RMS(after, before=list(range(52))):
 
 
 def guessing(after, before=list(range(52))):
-    count,  guess, toguess = 0, 0, [i for i in before]
+    count, guess, lastcard, toguess = 0, 0, 0, [i for i in before]
 
     for card in after:
-        guess = numpy.random.choice(toguess)
+        if before[before.index(lastcard) + 1] not in toguess:
+            guess = numpy.random.choice(toguess)
+        else:
+            guess = before[before.index(lastcard) + 1]
+
         if card == guess:
             count += 1
+
         toguess.remove(card)
+        lastcard = card
 
     return count
 
@@ -57,10 +63,12 @@ def guessing(after, before=list(range(52))):
 def getdata(shuffle=rand, measure=RSS,  decks=1000, shuffles=1, accuracy=1):
     xdata, ydata, newdecks, olddecks  = [], [], [], [list(range(52)) for _ in range(decks)]
  
-    for _ in range(shuffles):
+    for i in range(shuffles):
+        print('Shuffling ' str(decks) ' decks...')
         newdecks = [shuffle(deck) for deck in olddecks]
         data = []
         for j in range(decks):
+            print('Shuffle: ' + str(i) + ' Deck: ' + str(j))
             data.append(round(measure(newdecks[j], olddecks[j]), accuracy))
 
         olddecks = newdecks
@@ -74,3 +82,20 @@ def getdata(shuffle=rand, measure=RSS,  decks=1000, shuffles=1, accuracy=1):
 
     with open('_'.join([shuffle.__name__, measure.__name__, str(decks), str(shuffles), str(accuracy), 'y.txt']), 'w') as outfile:
         json.dump(ydata, outfile)
+
+
+for shuff in (rand, riffle, overhand)[1:]:
+    print(shuff.__name__)
+    for mesr in (RSS, RMS, guessing):
+        getdata(shuffle=shuff, measure=mesr, decks = 1000000, shuffles=1, accuracy=2)
+        print('Got nice data for ' + shuff.__name__ + ' ' + mesr.__name__)
+
+        if shuff == rand or mesr == RMS or (shuff == riffle and mesr == RSS):
+            continue
+
+        getdata(shuffle=shuff, measure=mesr, decks=100000, shuffles=20, accuracy=1)
+        print('Got long term data for ' + shuff.__name__ + ' ' + mesr.__name__)
+
+
+
+
