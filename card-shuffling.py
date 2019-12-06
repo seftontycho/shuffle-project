@@ -56,15 +56,15 @@ def guessing(after, before=list(range(52))):
 
         toguess.remove(card)
         lastcard = card
-
+        
     return count
 
 
 def getdata(shuffle=rand, measure=RSS,  decks=1000, shuffles=1, accuracy=1):
-    xdata, ydata, newdecks, olddecks  = [], [], [], [list(range(52)) for _ in range(decks)]
- 
+    xdata, ydata, newdecks, olddecks = [], [], [], [list(range(52)) for _ in range(decks)]
+
     for i in range(shuffles):
-        print('Shuffling ' str(decks) ' decks...')
+        print('Shuffling ' + str(decks) + ' decks...')
         newdecks = [shuffle(deck) for deck in olddecks]
         data = []
         for j in range(decks):
@@ -84,10 +84,10 @@ def getdata(shuffle=rand, measure=RSS,  decks=1000, shuffles=1, accuracy=1):
         json.dump(ydata, outfile)
 
 
-for shuff in (rand, riffle, overhand)[1:]:
+for shuff in (rand, riffle, overhand)[2:]:
     print(shuff.__name__)
     for mesr in (RSS, RMS, guessing):
-        getdata(shuffle=shuff, measure=mesr, decks = 1000000, shuffles=1, accuracy=2)
+        getdata(shuffle=shuff, measure=mesr, decks=1000000, shuffles=1, accuracy=2)
         print('Got nice data for ' + shuff.__name__ + ' ' + mesr.__name__)
 
         if shuff == rand or mesr == RMS or (shuff == riffle and mesr == RSS):
@@ -95,7 +95,4 @@ for shuff in (rand, riffle, overhand)[1:]:
 
         getdata(shuffle=shuff, measure=mesr, decks=100000, shuffles=20, accuracy=1)
         print('Got long term data for ' + shuff.__name__ + ' ' + mesr.__name__)
-
-
-
 
