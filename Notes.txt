@@ -1,0 +1,105 @@
+Structure:
+	Abstract - Clickbait
+	Contents
+	Indroduction - Abstract explained, outlines structure of document
+	Main Content:
+		Define a deck of cards,
+		Define Randomness,
+		Define Shuffling
+		
+		Disscuss our chosen measures of good shuffling
+		
+		For each type of shuffle:
+			Outline the shuffle,
+			Discuss where it's used,
+			Discuss how it compares with our measures,
+			Discuss benefits and downsides to the shuffle (both numerical and skill required)
+			
+	Conclusion
+	Appendix
+	Bibliography
+	
+
+
+
+Ideas (Needs research/thought):
+	Shuffles:
+		Overhand,
+		Riffle,
+		Wash
+	
+	Measures:
+		Total Variation Distance,
+		Guessing Measure,
+		5 card chunking distance
+		
+	Abstract concepts:
+		What is a deck of cards,
+		What is shuffling,
+		What is randomness
+		
+		
+
+	Vector Distance:
+		Completely random shuffle. Graph RSS and RMS.
+
+		Overhand -  RSS and RMS - Nice graph for 1 shuffle. Series of graphs for sucsessive shuffles.
+
+		Riffle multiple RSS and RMS after each shuffle.
+
+		Guessing on Riffle, Overhand and Random.
+
+		How many cards stay the same after random shuffle.
+
+		How many cards stay the same after riffle and overhand.
+
+		Do some with random overlayed.
+
+		Randomness on PC:
+			Fisher Yates Shuffle
+			Disscussion of code.
+
+		
+
+
+
+
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	
+		
+		
