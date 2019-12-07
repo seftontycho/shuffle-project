@@ -1,4 +1,5 @@
-import random, math, json
+import random, math, json, glob
+import matplotlib.pyplot as plt
 import numpy
 
 
@@ -51,58 +52,37 @@ def guessing(after, before=list(range(52))):
         if lastcard != before[-1]:
             if before[before.index(lastcard) + 1] in toguess:
                 guess = before[before.index(lastcard) + 1]
-                                
 
         if card == guess:
             count += 1
 
         toguess.remove(card)
         lastcard = card
-        
+
     return count
 
 
-def getdata(shuffle=rand, measure=RSS,  decks=1000, shuffles=1, accuracy=1):
-    xdata, ydata, newdecks, olddecks = [], [], [], [list(range(52)) for _ in range(decks)]
-
-    for i in range(shuffles):
-        print('Shuffling ' + str(decks) + ' decks...')
-        newdecks = [shuffle(deck) for deck in olddecks]
-        data = []
-        for j in range(decks):
-            print('Shuffle: ' + str(i) + ' Deck: ' + str(j))
-            data.append(round(measure(newdecks[j], olddecks[j]), accuracy))
-
-        olddecks = newdecks
-        currentx = list(dict.fromkeys(data))
-        currentx.sort()
-        xdata.append(currentx)
-        ydata.append([data.count(x) for x in currentx])
-
-    with open('_'.join([shuffle.__name__, measure.__name__, str(decks), str(shuffles), str(accuracy), 'x.txt']), 'w') as outfile:
-        json.dump(xdata, outfile)
-
-    with open('_'.join([shuffle.__name__, measure.__name__, str(decks), str(shuffles), str(accuracy), 'y.txt']), 'w') as outfile:
-        json.dump(ydata, outfile)
-
-
-def fastdata(shuffles=(rand, riffle, overhand), measures=(RSS, guessing), decks=1000, iters=1, accuracy=1):
+def getdata(shuffles=(rand, riffle, overhand), measures=(RSS, guessing), decks=1000, iters=1, accuracy=1):
     for i, shuff in enumerate(shuffles):
         newdecks, olddecks = [], [list(range(52)) for _ in range(decks)]
 
-        xdata = [[[] for _ in range(iters)] for __ in range(len(measures))]
+        data = [[[] for _ in range(iters)] for __ in range(len(measures))]
 
         for j in range(iters):
             print('Shuffling ' + str(decks) + ' decks...')
             newdecks = [shuff(deck) for deck in olddecks]
 
             for k in range(decks):
-                print('Deck: ' + str(k))
+                print('Iteration: ' + str(j) + ' Deck: ' + str(k))
                 for c, mesr in enumerate(measures):
-                    xdata[c][j].append(round(mesr(newdecks[k], olddecks[k]), accuracy))
+                    data[c][j].append(round(mesr(newdecks[k], olddecks[k]), accuracy))
 
-        currentx = [[list(dict.fromkeys(iteration)) for iteration in mesr] for mesr in xdata]
-        ydata = [[[xdata.count(data) for data in iteration] for iteration in mesr] for mesr in currentx]
+        xdata = [[list(dict.fromkeys(iteration)) for iteration in mesr] for mesr in data]
+        for mesr in xdata:
+            for iteration in mesr:
+                iteration.sort()
+
+        ydata = [[[data[j][i].count(x) for x in iteration] for i, iteration in enumerate(mesr)] for j, mesr in enumerate(xdata)]
 
         for c, mesr in enumerate(measures):
             with open('output/' + '_'.join([shuff.__name__, mesr.__name__, str(decks), str(iters), str(accuracy), 'x.txt']), 'w') as outfile:
@@ -112,8 +92,37 @@ def fastdata(shuffles=(rand, riffle, overhand), measures=(RSS, guessing), decks=
                 json.dump(ydata[c], outfile)
 
 
-fastdata(decks=1000, accuracy=2)
+def plotdata(xdata, ydata, shuffle, measure, decks):
+    for i, x in enumerate(xdata):
+        y = ydata[i]
+        f = plt.figure()
+        plt.rc('font', family='serif')
+        plt.plot(x, y, 'bo')
+        plt.axis([min(x) - 2, max(x) + 2, 0, max(y) + 2])
+
+        if i == 0:
+            title = shuffle + ' measured with ' + measure + ' using ' + str(decks) + ' decks'
+        else:
+            title = shuffle + ' measured with ' + measure + ' using ' + str(decks) + ' decks Iteration ' + str(i)
+
+        plt.title(title, fontsize=11)
+        plt.xlabel(measure + ' Score', fontsize=11)
+        plt.ylabel('Frequency', fontsize=11)
+
+        plt.show()
+
+        f.savefig('output/' + title + '.pdf', bbox_inches='tight')
+
+
+getdata(decks=1000000, accuracy=2)
 print('Got nice data')
 
-fastdata(decks=1000, iters=20, accuracy=1)
-print('Got long term data')
+for name in glob.glob('./output/*x.txt'):
+    shuffle, measure, decks = name.split('\\')[1].split('_')[:3]
+    with open(name) as infile:
+        xdata = json.load(infile)
+
+    with open(name[:-5] + 'y.txt') as infile:
+        ydata = json.load(infile)
+
+    plotdata(xdata, ydata, shuffle, measure, decks)

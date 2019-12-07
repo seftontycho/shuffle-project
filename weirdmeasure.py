@@ -72,4 +72,4 @@ def plot_data(trials):
     # save as PDF
     #f.savefig('Total_Vector_Distance_{}.pdf'.format(trials), bbox_inches='tight')
 
-plot_data(1000000)
+plot_data(10000)
