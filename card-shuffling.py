@@ -35,11 +35,13 @@ def overhand(deck):
     return [item for sublist in newdeck for item in sublist] + [0]
 
 
-def RSS(after, before=list(range(52))):
+def RSS(after, before):
+    list(range(52))
     return sum((after[i] - before[i])**2 for i in range(len(after))) ** 0.5
 
 
-def RMS(after, before=list(range(52))):
+def RMS(after, before):
+    before = list(range(52))
     return RSS(after, before) / (len(after) ** 0.5)
 
 
@@ -62,7 +64,7 @@ def guessing(after, before=list(range(52))):
     return count
 
 
-def getdata(shuffles=(rand, riffle, overhand), measures=(RSS, guessing), decks=1000, iters=1, accuracy=1):
+def getdata(shuffles=(rand, riffle, overhand), measures=[RSS], decks=1000, iters=1, accuracy=1):
     for i, shuff in enumerate(shuffles):
         newdecks, olddecks = [], [list(range(52)) for _ in range(decks)]
 
@@ -109,13 +111,14 @@ def plotdata(xdata, ydata, shuffle, measure, decks):
         plt.xlabel(measure + ' Score', fontsize=11)
         plt.ylabel('Frequency', fontsize=11)
 
-        plt.show()
+        #plt.show()
 
         f.savefig('output/' + title + '.pdf', bbox_inches='tight')
+        plt.close()
 
 
-getdata(decks=1000000, accuracy=2)
-print('Got nice data')
+getdata(decks=100000, accuracy=1, iters=50)
+print('Got long term data')
 
 for name in glob.glob('./output/*x.txt'):
     shuffle, measure, decks = name.split('\\')[1].split('_')[:3]
