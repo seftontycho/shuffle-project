@@ -1,52 +1,70 @@
-import random, math, json, glob
+import random
+import math
+import json
+import glob
 import matplotlib.pyplot as plt
 import numpy
 
 
 def nCr(n, r):
-    return math.factorial(n) / math.factorial(r) / math.factorial(n - r)
+    '''Returns the number of ways of choosing r objects from n.'''
+    return math.factorial(n) // math.factorial(r) // math.factorial(n - r)
 
 
-def riffle(deck):
+def Riffle(deck):
+    '''Returns a Riffle shuffle based on the Gilbert-Shannon-Reeds Model'''
     probs = [nCr(len(deck), r)/(2**len(deck)) for r in range(len(deck))]
+
     split = numpy.random.choice(list(range(len(deck))), p=probs)
     splitdeck = [A, B] = deck[:split], deck[split:]
     newdeck = []
+
     while A or B:
-        newdeck.append(splitdeck[numpy.random.choice([0, 1], p=[len(A)/len(A+B), len(B)/len(A+B)])].pop(0))
+        choice = numpy.random.choice([0, 1], p=[len(A)/len(A+B),
+                                                len(B)/len(A+B)])
+
+        newdeck.append(splitdeck[choice].pop(0))
 
     return newdeck
 
 
-def rand(deck):
-    newdeck = [e for e in deck]
+def FisherYates(deck):
+    """A function that completely randomly shuffles a deck.
+       Based off python's in built random function which uses
+       the Fisher-Yates shuffle."""
+    newdeck = deck.copy()
     random.shuffle(newdeck)
     return newdeck
 
 
-def overhand(deck):
+def Overhand(deck):
+    """A function that shuffles a deck using the Pemantle model
+       using an expected packet size of 2."""
     newdeck = []
     while len(deck) > 1:
         probs = [0.5**n for n in range(1, len(deck))]
-        k = numpy.random.choice(list(range(1, len(deck))) + [0], p=probs+[1 - sum(probs)])
-        newdeck.append(deck[len(deck) - k:])
-        deck = deck[:len(deck) - k]
+        k = numpy.random.choice(list(range(1, len(deck))) + [0],
+                                p=probs+[1 - sum(probs)])
 
-    return [item for sublist in newdeck for item in sublist] + [0]
+        newdeck, deck = newdeck + deck[len(deck) - k:], deck[:len(deck) - k]
+
+    return newdeck + [0]
 
 
 def RSS(after, before):
-    list(range(52))
-    return sum((after[i] - before[i])**2 for i in range(len(after))) ** 0.5
+    """A function that returns the Root-Sum-Squared value for a given deck."""
+    return sum((i - before.index(c))**2 for i, c in enumerate(after))**0.5
 
 
 def RMS(after, before):
-    before = list(range(52))
+    """A function that returns the Root-Mean-Squared value for a given deck."""
     return RSS(after, before) / (len(after) ** 0.5)
 
 
-def guessing(after, before=list(range(52))):
-    count, guess, lastcard, toguess = 0, 0, 0, [i for i in before]
+def Guessing(after, before):
+    """A function that returns the number of cards guessed correctly
+       for a given deck using the guessing method."""
+    count, guess, lastcard, toguess = 0, 0, 0, before.copy()
 
     for card in after:
         guess = numpy.random.choice(toguess)
@@ -64,68 +82,92 @@ def guessing(after, before=list(range(52))):
     return count
 
 
-def getdata(shuffles=(rand, riffle, overhand), measures=[RSS], decks=1000, iters=1, accuracy=1):
-    for i, shuff in enumerate(shuffles):
+def collectdata(shuffles, measures, decks=1000, cycles=1, accuracy=1):
+    for _, shuffle in enumerate(shuffles):
+        data = [[[] for __ in range(cycles)] for _ in range(len(measures))]
         newdecks, olddecks = [], [list(range(52)) for _ in range(decks)]
 
-        data = [[[] for _ in range(iters)] for __ in range(len(measures))]
+        for i in range(cycles):
+            print(shuffle.__name__ + ' Shuffling ' + str(decks) + ' decks...')
+            newdecks = [shuffle(deck) for deck in olddecks]
 
-        for j in range(iters):
-            print('Shuffling ' + str(decks) + ' decks...')
-            newdecks = [shuff(deck) for deck in olddecks]
+            for j, deck in enumerate(newdecks):
+                print(shuffle.__name__ + f' Cycle: {i} Deck: {j}')
 
-            for k in range(decks):
-                print('Iteration: ' + str(j) + ' Deck: ' + str(k))
-                for c, mesr in enumerate(measures):
-                    data[c][j].append(round(mesr(newdecks[k], olddecks[k]), accuracy))
+                for k, measure in enumerate(measures):
+                    data[k][i].append(round(measure(deck,
+                                            list(range(len(deck))))))
 
-        xdata = [[list(dict.fromkeys(iteration)) for iteration in mesr] for mesr in data]
-        for mesr in xdata:
-            for iteration in mesr:
-                iteration.sort()
+        xdata = [[list(dict.fromkeys(i)) for i in measure] for measure in data]
+        ydata = [[[] for cycle in measure] for measure in xdata]
 
-        ydata = [[[data[j][i].count(x) for x in iteration] for i, iteration in enumerate(mesr)] for j, mesr in enumerate(xdata)]
+        for measure in xdata:
+            for cycle in measure:
+                cycle.sort()
 
-        for c, mesr in enumerate(measures):
-            with open('output/' + '_'.join([shuff.__name__, mesr.__name__, str(decks), str(iters), str(accuracy), 'x.txt']), 'w') as outfile:
-                json.dump(xdata[c], outfile)
+        for i, measure in enumerate(xdata):
+            for j, cycle in enumerate(measure):
+                for datapoint in cycle:
+                    ydata[i][j].append(data[i][j].count(datapoint))
 
-            with open('output/' + '_'.join([shuff.__name__, mesr.__name__, str(decks), str(iters), str(accuracy), 'y.txt']), 'w') as outfile:
-                json.dump(ydata[c], outfile)
+        for i, measure in enumerate(measures):
+            name = '_'.join([shuffle.__name__, measure.__name__, str(decks),
+                             str(cycles), str(accuracy), '.txt'])
+
+            with open(('output/data/' + name), 'w') as outfile:
+                json.dump([xdata[i], ydata[i]], outfile)
 
 
-def plotdata(xdata, ydata, shuffle, measure, decks):
-    for i, x in enumerate(xdata):
-        y = ydata[i]
+def graphdata(xdata, ydata, shuffle, measure, decks):
+    """A function that uses data to plot graphs and save them as pdfs."""
+    plt.rc('font', family='serif')
+
+    for i, (xaxis, yaxis) in enumerate(zip(xdata, ydata)):
         f = plt.figure()
-        plt.rc('font', family='serif')
-        plt.plot(x, y, 'bo')
-        plt.axis([min(x) - 2, max(x) + 2, 0, max(y) + 2])
+        x_range = max(xaxis) - min(xaxis)
 
-        if i == 0:
-            title = shuffle + ' measured with ' + measure + ' using ' + str(decks) + ' decks'
-        else:
-            title = shuffle + ' measured with ' + measure + ' using ' + str(decks) + ' decks Iteration ' + str(i)
+        plt.plot(xaxis, yaxis, 'ko', markersize=4)
+        plt.axis([min(xaxis) - x_range * 0.05,
+                  max(xaxis) + x_range * 0.05,
+                  min(yaxis) * 0.9, max(yaxis) * 1.1])
+
+        template = '{} shuffle measured with {} using {} decks.'
+        title = template.format(shuffle, measure, decks)
+
+        if len(xdata) != 1:
+            title += f' Cycle: {i}.'
 
         plt.title(title, fontsize=11)
         plt.xlabel(measure + ' Score', fontsize=11)
         plt.ylabel('Frequency', fontsize=11)
 
-        #plt.show()
+        title = title.replace('.', '').replace(':', '')
 
-        f.savefig('output/' + title + '.pdf', bbox_inches='tight')
+        f.savefig('output/graphs/' + title + '.pdf', bbox_inches='tight')
         plt.close()
 
 
-getdata(decks=100000, accuracy=1, iters=50)
-print('Got long term data')
+def example():
+    """A simple example function to show how the rest of
+       the code was used to collect and create our graphs"""
 
-for name in glob.glob('./output/*x.txt'):
-    shuffle, measure, decks = name.split('\\')[1].split('_')[:3]
-    with open(name) as infile:
-        xdata = json.load(infile)
+    # Gets data for all shuffles for all measures using 1000000
+    # decks with all measures rounded to 2 decimal places
 
-    with open(name[:-5] + 'y.txt') as infile:
-        ydata = json.load(infile)
+    collectdata([Overhand], [RSS],
+                decks=50000, accuracy=2, cycles=1)
 
-    plotdata(xdata, ydata, shuffle, measure, decks)
+    print('Collected data.')
+
+    # Plot availible data.
+    for name in glob.glob('./output/data/*.txt'):
+        shuffle, measure, decks = name.split('\\')[1].split('_')[:3]
+
+        with open(name) as infile:
+            xdata, ydata = json.load(infile)
+
+        print('Plotting ' + ' '.join([shuffle, measure, decks]))
+        graphdata(xdata, ydata, shuffle, measure, decks)
+
+
+example()
